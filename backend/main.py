@@ -8,6 +8,7 @@ app = FastAPI()
 
 # Load your trained model
 MODEL_PATH = "model.pkl"
+
 if os.path.exists(MODEL_PATH):
     with open(MODEL_PATH, "rb") as model_file:
         model = pickle.load(model_file)
@@ -28,7 +29,7 @@ def read_root():
 def predict(data: UserData):
     if model is None:
         raise HTTPException(status_code=500, detail="Model not found. Please upload the trained model.")
-
+    
     try:
         # Convert input data to numpy array
         input_data = np.array([[data.feature1, data.feature2, data.feature3]])
@@ -38,4 +39,4 @@ def predict(data: UserData):
         
         return {"prediction": str(prediction[0])}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
