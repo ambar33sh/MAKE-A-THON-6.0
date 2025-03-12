@@ -29,7 +29,7 @@
             const brand = document.getElementById('brand').value;
             const price = parseFloat(document.getElementById('price').value);
             const rating = parseInt(document.getElementById('rating').value);
-            const sentiment = document.getElementById('sentiment').value;
+            
 
             const response = await fetch("https://make-a-thon-6-0-5.onrender.com/predict/", {
                 method: "POST",
