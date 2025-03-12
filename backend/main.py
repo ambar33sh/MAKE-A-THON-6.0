@@ -15,9 +15,9 @@ app.add_middleware(
     allow_headers=["*"],   # Allows all headers
 )
 
-# Load your trained model and label encoders
+# Load trained model and label encoders
 MODEL_PATH = "model.pkl"
-ENCODERS_PATH = "label_encoders.pkl"
+ENCODERS_PATH = "labelencoder.pkl"
 
 if os.path.exists(MODEL_PATH) and os.path.exists(ENCODERS_PATH):
     with open(MODEL_PATH, "rb") as model_file:
@@ -28,14 +28,13 @@ else:
     model = None
     label_encoders = None
 
-# Define the expected input data format
+# Define expected input format (No sentiment column)
 class UserData(BaseModel):
     category: str
     price_range: str
     brand: str
     price: float
     rating: int
-    sentiment: str = "Neutral"
 
 @app.get("/")
 def read_root():
@@ -48,22 +47,21 @@ def predict(data: UserData):
 
     try:
         # Encode categorical inputs
-        product_category_encoded = label_encoders["Product Category"].transform([data.category])[0]
-        price_range_encoded = label_encoders["Price Range"].transform([data.price_range])[0]
-        brand_type_encoded = label_encoders["Brand Type"].transform([data.brand])[0]
-        sentiment_encoded = label_encoders["Sentiment"].transform([data.sentiment])[0]
+        try:
+            product_category_encoded = label_encoders["Product Category"].transform([data.category])[0]
+            price_range_encoded = label_encoders["Price Range"].transform([data.price_range])[0]
+            brand_type_encoded = label_encoders["Brand Type"].transform([data.brand])[0]
+        except KeyError as e:
+            raise HTTPException(status_code=400, detail=f"Invalid input value: {str(e)}")
 
-        # Prepare input for the model
-        product_data = np.array([[product_category_encoded, data.price, price_range_encoded, data.rating, brand_type_encoded, sentiment_encoded]])
+        # Prepare input for model (No sentiment column)
+        product_data = np.array([[product_category_encoded, data.price, price_range_encoded, data.rating, brand_type_encoded]])
 
         # Make prediction
         prediction = model.predict(product_data)[0]
 
         # Generate response message
-        if prediction == 1:
-            result = "✅ Based on past behavior, this product might be returned."
-        else:
-            result = "❌ This product is aligned with previous purchases and will likely be kept."
+        result = "✅ Product might be returned." if prediction == 1 else "❌ Product is likely to be kept."
 
         return {"prediction": result}
     except Exception as e:
