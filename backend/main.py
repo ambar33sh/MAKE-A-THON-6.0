@@ -1,43 +1,31 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import pickle
-import numpy as np
-import os
 
 app = FastAPI()
 
-# Load your trained model
-MODEL_PATH = "model.pkl"
-if os.path.exists(MODEL_PATH):
-    with open(MODEL_PATH, "rb") as model_file:
+# Load the trained model
+try:
+    with open("model.pkl", "rb") as model_file:
         model = pickle.load(model_file)
-else:
-    model = None
+except Exception as e:
+    raise HTTPException(status_code=500, detail=f"Model loading failed: {str(e)}")
 
-# Define the expected input data format
-class UserData(BaseModel):
-    feature1: float
-    feature2: float
-    feature3: float
-    # Add more features as needed
-
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to the Reverse Logistics API"}
+class ProductDetails(BaseModel):
+    category: str
+    price: float
+    rating: float
+    other_features: dict  # Include any other features your model requires
 
 @app.post("/predict/")
-def predict(data: UserData):
-    if model is None:
-        raise HTTPException(status_code=500, detail="Model not found. Please upload the trained model.")
-
+async def predict(details: ProductDetails):
     try:
-        # Convert input data to numpy array
-        input_data = np.array([[data.feature1, data.feature2, data.feature3]])  # Modify as per your model's input structure
-        
-        # Make a prediction
-        prediction = model.predict(input_data)
-        
-        # Return prediction result
-        return {"prediction": str(prediction[0])}
+        # Prepare the input data for prediction
+        data = [details.category, details.price, details.rating]  # Modify this as per your model's input requirements
+
+        # Make prediction
+        prediction = model.predict([data])
+
+        return {"prediction": prediction[0]}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=400, detail=f"Prediction failed: {str(e)}")
