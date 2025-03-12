@@ -3,57 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Recommendation System</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f0f0f0; margin: 0; padding: 0; }
-        .container { width: 60%; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
-        h1 { text-align: center; }
-        input, select { padding: 8px; margin: 5px; width: 100%; }
-        button { padding: 10px 20px; margin-top: 10px; cursor: pointer; }
-        #result { margin-top: 20px; padding: 10px; background: #d1ffd1; border-radius: 5px; }
-    </style>
+    <title>E-commerce Recommendation System</title>
 </head>
 <body>
-    <div class="container">
-        <h1>Product Recommendation System</h1>
-        
-        <label>Category:</label>
-        <select id="category">
-            <option value="beauty">Beauty</option>
-            <option value="books">Books</option>
-            <option value="clothing">Clothing</option>
-            <option value="electronics">Electronics</option>
-            <option value="home appliances">Home Appliances</option>
-            <option value="sports">Sports</option>
-            <option value="toys">Toys</option>
-        </select>
-
-        <label>Price:</label>
-        <input type="number" id="price" placeholder="Enter Price">
-
-        <label>Rating:</label>
-        <input type="number" id="rating" placeholder="Enter Rating (1-5)" step="0.1">
-
-        <button onclick="getPrediction()">Check Recommendation</button>
-
-        <div id="result"></div>
-    </div>
+    <h1>E-commerce Recommendation System</h1>
+    <form id="predictionForm">
+        <label>Feature 1: <input type="number" step="any" id="feature1"></label><br><br>
+        <label>Feature 2: <input type="number" step="any" id="feature2"></label><br><br>
+        <label>Feature 3: <input type="number" step="any" id="feature3"></label><br><br>
+        <button type="submit">Get Recommendation</button>
+    </form>
+    <div id="result"></div>
 
     <script>
-        async function getPrediction() {
-            const category = document.getElementById("category").value;
-            const price = parseFloat(document.getElementById("price").value);
-            const rating = parseFloat(document.getElementById("rating").value);
+        document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const feature1 = parseFloat(document.getElementById('feature1').value);
+            const feature2 = parseFloat(document.getElementById('feature2').value);
+            const feature3 = parseFloat(document.getElementById('feature3').value);
 
             const response = await fetch("http://127.0.0.1:8000/predict/", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ category, price, rating, other_features: {} })
+                body: JSON.stringify({ feature1, feature2, feature3 })
             });
 
             const result = await response.json();
-            document.getElementById("result").innerText = `Prediction: ${result.prediction}`;
-        }
+            document.getElementById('result').innerText = `Prediction: ${result.prediction}`;
+        });
     </script>
 </body>
 </html>
