@@ -40,6 +40,7 @@ class UserData(BaseModel):
     brand: str
     price: float
     rating: int
+    sentiment: float  # ✅ Added missing feature
 
 @app.get("/")
 def read_root():
@@ -59,7 +60,9 @@ def predict(data: UserData):
         price_range_encoded = label_encoders["Price Range"].transform([data.price_range])[0]
         brand_type_encoded = label_encoders["Brand Type"].transform([data.brand])[0]
 
-        product_data = np.array([[product_category_encoded, data.price, price_range_encoded, data.rating, brand_type_encoded]])
+        # ✅ Added sentiment feature to match frontend
+        product_data = np.array([[product_category_encoded, data.price, price_range_encoded, data.rating, brand_type_encoded, data.sentiment]])
+        
         prediction = model.predict(product_data)[0]
 
         result = "✅ Based on past behavior, this product might be returned." if prediction == 1 else "❌ This product is aligned with previous purchases and will likely be kept."
