@@ -23,7 +23,8 @@
             const feature2 = parseFloat(document.getElementById('feature2').value);
             const feature3 = parseFloat(document.getElementById('feature3').value);
 
-            const response = await fetch("http://127.0.0.1:8000/predict/", {
+            cconst response = await fetch("https://your-app.onrender.com/predict/", {
+
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ feature1, feature2, feature3 })
