@@ -15,9 +15,9 @@ app.add_middleware(
     allow_headers=["*"],   # Allows all headers
 )
 
-# Load trained model and label encoders
+# Load your trained model and label encoders
 MODEL_PATH = "model.pkl"
-ENCODERS_PATH = "labelencoder.pkl"
+ENCODERS_PATH = "label_encoders.pkl"
 
 if os.path.exists(MODEL_PATH) and os.path.exists(ENCODERS_PATH):
     with open(MODEL_PATH, "rb") as model_file:
@@ -28,7 +28,7 @@ else:
     model = None
     label_encoders = None
 
-# Define expected input format (No sentiment column)
+# Define the expected input data format
 class UserData(BaseModel):
     category: str
     price_range: str
@@ -47,21 +47,21 @@ def predict(data: UserData):
 
     try:
         # Encode categorical inputs
-        try:
-            product_category_encoded = label_encoders["Product Category"].transform([data.category])[0]
-            price_range_encoded = label_encoders["Price Range"].transform([data.price_range])[0]
-            brand_type_encoded = label_encoders["Brand Type"].transform([data.brand])[0]
-        except KeyError as e:
-            raise HTTPException(status_code=400, detail=f"Invalid input value: {str(e)}")
+        product_category_encoded = label_encoders["Product Category"].transform([data.category])[0]
+        price_range_encoded = label_encoders["Price Range"].transform([data.price_range])[0]
+        brand_type_encoded = label_encoders["Brand Type"].transform([data.brand])[0]
 
-        # Prepare input for model (No sentiment column)
+        # Prepare input for the model
         product_data = np.array([[product_category_encoded, data.price, price_range_encoded, data.rating, brand_type_encoded]])
 
         # Make prediction
         prediction = model.predict(product_data)[0]
 
         # Generate response message
-        result = "✅ Product might be returned." if prediction == 1 else "❌ Product is likely to be kept."
+        if prediction == 1:
+            result = "✅ Based on past behavior, this product might be returned."
+        else:
+            result = "❌ This product is aligned with previous purchases and will likely be kept."
 
         return {"prediction": result}
     except Exception as e:
