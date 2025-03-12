@@ -10,25 +10,30 @@ app = FastAPI()
 # Allow CORS for all origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
-    allow_methods=["*"],   # Allows all methods (POST, GET, etc.)
-    allow_headers=["*"],   # Allows all headers
+    allow_origins=["*"],  
+    allow_methods=["*"],   
+    allow_headers=["*"],  
 )
 
-# Load your trained model and label encoders
-MODEL_PATH = "model.pkl"
-ENCODERS_PATH = "label_encoders.pkl"
+# Define file paths using absolute paths for better compatibility
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "model.pkl")
+ENCODERS_PATH = os.path.join(os.path.dirname(__file__), "label_encoders.pkl")
+
+print(f"🔍 Checking for model at: {MODEL_PATH}")
+print(f"🔍 Checking for encoders at: {ENCODERS_PATH}")
 
 if os.path.exists(MODEL_PATH) and os.path.exists(ENCODERS_PATH):
+    print("✅ Model and label encoders found. Loading...")
     with open(MODEL_PATH, "rb") as model_file:
         model = pickle.load(model_file)
     with open(ENCODERS_PATH, "rb") as encoders_file:
         label_encoders = pickle.load(encoders_file)
+    print(f"📝 Available label encoders: {label_encoders.keys()}")  # Debugging step
 else:
+    print("❌ ERROR: Model or Label Encoders not found. Check file paths.")
     model = None
     label_encoders = None
 
-# Define the expected input data format
 class UserData(BaseModel):
     category: str
     price_range: str
@@ -43,25 +48,21 @@ def read_root():
 @app.post("/predict/")
 def predict(data: UserData):
     if model is None or label_encoders is None:
-        raise HTTPException(status_code=500, detail="Model or Label Encoders not found. Please upload the trained model and encoders.")
+        return {"error": "Model or encoders are missing. Check deployment and file paths."}
 
     try:
-        # Encode categorical inputs
+        # Ensure keys exist before transformation
+        if "Product Category" not in label_encoders or "Price Range" not in label_encoders or "Brand Type" not in label_encoders:
+            return {"error": "Label encoders do not contain expected keys. Check training process."}
+
         product_category_encoded = label_encoders["Product Category"].transform([data.category])[0]
         price_range_encoded = label_encoders["Price Range"].transform([data.price_range])[0]
         brand_type_encoded = label_encoders["Brand Type"].transform([data.brand])[0]
 
-        # Prepare input for the model
         product_data = np.array([[product_category_encoded, data.price, price_range_encoded, data.rating, brand_type_encoded]])
-
-        # Make prediction
         prediction = model.predict(product_data)[0]
 
-        # Generate response message
-        if prediction == 1:
-            result = "✅ Based on past behavior, this product might be returned."
-        else:
-            result = "❌ This product is aligned with previous purchases and will likely be kept."
+        result = "✅ Based on past behavior, this product might be returned." if prediction == 1 else "❌ This product is aligned with previous purchases and will likely be kept."
 
         return {"prediction": result}
     except Exception as e:
