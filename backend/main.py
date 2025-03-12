@@ -1,10 +1,19 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import pickle
 import numpy as np
 import os
 
 app = FastAPI()
+
+# Allow CORS for all origins
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_methods=["*"],   # Allows all methods (POST, GET, etc.)
+    allow_headers=["*"],   # Allows all headers
+)
 
 # Load your trained model and label encoders
 MODEL_PATH = "model.pkl"
